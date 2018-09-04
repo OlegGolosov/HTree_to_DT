@@ -95,30 +95,6 @@ echo "par7 = ${par7}"
 echo "--------------------------------"
 echo ""
 
-
-#echo ""
-#echo "--------------------------------"
-#echo " DEBUG INFO"                     
-#echo "==> Kernel version information :"
-#uname -a                               
-#echo "==> C compiler that built the kernel:"
-#cat /proc/version                           
-#echo "==> load on this node:"               
-#mpstat -P ALL                               
-#echo "==> actual compiler is"               
-#gcc -v                                      
-#echo "--------------------------------"     
-#echo ""               
-
-
-
-###################################################################
-###################################################################
-#   EDIT THIS PART TO EXECUTE YOUR JOB!
-
-
-
-#----------------------
 # evironment 
 echo "==> running enironment script ${par1}"
 . ${par1}
@@ -161,7 +137,3 @@ echo "finsished!"
 echo "--------------------------------"
 echo ""
 date $format
-
-
-sleep 2
-
