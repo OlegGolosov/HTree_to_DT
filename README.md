@@ -40,8 +40,8 @@ Usage:
 	$ ./batch/run.sh [path/to/file_list] [number_of_runs]
 ```
 \
+	This will launch the convertation as an array of jobs.\
 	Do not use the last argument if you want to process all runs in the list.\
-	This will launch the convertation in the array of jobs.\
-	Output files and logs are stored in the "output" folder.
+	Output files and logs are stored in the "output" folder.\
 	
 	
