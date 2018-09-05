@@ -60,7 +60,7 @@ const Float_t D2R = TMath::DegToRad(); //deg to rad
 //  outfile    : output file
 //  nEvents    : number of events to processed. if  nEvents < entries or < 0 the chain will be processed
 
-Int_t HTree_to_DT (TString infileList, TString outfile, Int_t nEvents=-1)
+Int_t HTree_to_DT (TString infileList, TString outfile = "output.root", Int_t nEvents=-1)
 {
     Bool_t isSimulation = kFALSE;
 
@@ -303,21 +303,18 @@ Int_t HTree_to_DT (TString infileList, TString outfile, Int_t nEvents=-1)
 
 int main(int argc, char **argv)
 {
-    //TROOT Analysis("Analysis","compiled analysis macro");
-
-    // argc is the number of arguments in char* array argv
-    // CAUTION: argv[0] contains the progname
-    // argc has to be nargs+1
-
     TString nevts ;
     TString filenumber;
     switch (argc) {
-    case 4:       // just inputfile name + nArgs
+    case 4:
         nevts  = argv[3];
         return HTree_to_DT (TString(argv[1]),TString(argv[2]), nevts.Atoi());
         break;
+		case 3:
+        return HTree_to_DT (TString(argv[1]),TString(argv[2]));
+        break;
     default:
-        cerr<<"ERROR: loopDST() : WRONG NUMBER OF ARGUMENTS! TString infile="",TString outfile="", nevents=-1"<<endl;
+        cerr<<"ERROR: loopDST() : WRONG NUMBER OF ARGUMENTS! TString infile,TString outfile, nevents=-1"<<endl;
         return 1; // fail
     }
 }
