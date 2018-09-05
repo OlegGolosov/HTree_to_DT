@@ -12,20 +12,51 @@ find_package(DataTree REQUIRED)
 
 set(CMAKE_CXX_FLAGS "-Wall")
 
-list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
-list(APPEND CMAKE_PREFIX_PATH $ENV{DATATREE})
-
-#include(${ROOT_USE_FILE})
+include(${ROOT_USE_FILE})
 
 include_directories(
+    $ENV{HADDIR}/include
     ${CMAKE_SOURCE_DIR}
     ${ROOT_INCLUDE_DIRS}
-    ${DataTree_INCLUDE_DIR}/src
+    ${DataTree_INCLUDE_DIR}
     )
+		
+link_directories(
+    $ENV{HADDIR}/lib
+    ${CMAKE_SOURCE_DIR}
+    ${DataTree_LIBRARY_DIR}
+    )
+set (HADES_LIBS
+		libAlignment.so     
+		libHydra.so        
+		libMdcTrackD.so  
+		libOra.so       
+		libPionTracker.so  
+		libRpc.so         
+		libStart.so
+		libDst.so           
+		libKalman.so       
+		libMdcTrackG.so  
+		libOraSim.so    
+		libQA.so           
+		libShower.so      
+		libTof.so
+		libEmc.so           
+		libMdc.so          
+		libMdcUtil.so   
+		libOraUtil.so   
+		libRevt.so         
+		libShowerUtil.so  
+		libTools.so
+		libEventDisplay.so  
+		libMdcGarfield.so  
+		libOnline.so     
+		libParticle.so  
+		libRich.so         
+		libSimulation.so  
+		libWall.so
+		)
 add_definitions(${ROOT_CXX_FLAGS})
 
-add_executable(HTree_to_DT HADES_constants.h main.cpp)
-target_link_libraries(HTree_to_DT
-    ${ROOT_LIBRARIES}
-		DataTree
-    )
+add_executable(HTree_to_DT src/HADES_constants.h src/mhwalldivider.h src/HTree_to_DT.cxx)
+target_link_libraries(HTree_to_DT ${ROOT_LIBRARIES} ${HADES_LIBS} DataTree)

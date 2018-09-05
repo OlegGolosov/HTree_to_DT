@@ -40,5 +40,4 @@ namespace HADES_constants
 	};
 }
 
-}
 #endif

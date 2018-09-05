@@ -28,15 +28,13 @@
 #include <iostream>
 
 #include "DataTreeEvent.h"
-//#include "DataTreeTrack.h"
-//#include "DataTreeTOFHit.h"
 #include "mhwalldivider.h"
+#include "HADES_constants.h"
 
 
 using namespace std;
 
-static const int nSimpleTriggers = 15;
-const int [nSimpleTriggers] triggerMap =
+const int triggerMap [HADES_constants::kNtriggers] =
 {
 	Particle::kGoodVertexClust, 
 	Particle::kGoodVertexCand, 
@@ -56,13 +54,13 @@ const int [nSimpleTriggers] triggerMap =
 };
 
 const Float_t D2R = TMath::DegToRad(); //deg to rad
-const Float_t Y_BEAM = 0.740151;  //beam rapidity for 1.23GeV/c nucleon
+//const Float_t Y_BEAM = 0.740151;  //beam rapidity for 1.23GeV/c nucleon
 
 //  infileList : comma seprated file list "file1.root,file2.root" or "something*.root"
-//  outfile    : optional (not used here) , used to store hists in root file
+//  outfile    : output file
 //  nEvents    : number of events to processed. if  nEvents < entries or < 0 the chain will be processed
 
-Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
+Int_t HTree_to_DT (TString infileList, TString outfile, Int_t nEvents=-1)
 {
     Bool_t isSimulation = kFALSE;
 
@@ -104,9 +102,9 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
     HCategory* wallCat    = (HCategory*)HCategoryManager::getCategory(catWallHit);
 
     //Time
-    Int_t time;
+//    Int_t time;
 
-		DataTreeEvent DTEvent = new DataTreeEvent ();
+		DataTreeEvent *DTEvent = new DataTreeEvent ();
     TFile* out = new TFile(outfile.Data(),"RECREATE");
     out->cd();
 
@@ -114,18 +112,18 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
     tree->Branch("DTEvent", &DTEvent);
 
     Int_t entries = loop.getEntries();
-    if(nEvents < entries && nEvents >= 0 ) entries = nEvents;
+    if(nEvents < entries && nEvents > 0 ) entries = nEvents;
     TString filename;
-    Int_t sectors [6];
+//    Int_t sectors [6];
     MHWallDivider* divider = new MHWallDivider();
 		
-    for (Int_t i = 0; i < entries; i++) {
+    for (Int_t i = 1; i < entries; i++) {
 				DTEvent -> ClearEvent();
         Int_t nbytes =  loop.nextEvent(i);             // get next event. categories will be cleared before
         if(nbytes <= 0) { cout<<nbytes<<endl; break; } // last event reached
         if(i%5000 == 0) cout<<"event "<<i<<endl;
 
-        loop.getSectors(sectors); // fill sector array
+//        loop.getSectors(sectors); // fill sector array
 
         Int_t g, day, hour, minute;
         TString* be = new TString("be");
@@ -133,7 +131,7 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
         if(loop.isNewFile(filename)){
             if(!isSimulation) filename = HTime::stripFileName(filename,kTRUE,kFALSE);
             HTime::splitFileName(filename,*be,g,day,hour,minute,g,g,kFALSE);
-            time = day*24*60 + hour*24 + minute;
+//            time = day*24*60 + hour*24 + minute;
         }
 
         //-------------------------------------------------
@@ -143,13 +141,13 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
 
         //get type of trigger
 				HEventHeader *header = gHades->getCurrentEvent()->getHeader();
-        for (Int_t k = 0; k < nSimpleTriggers; k++) {
+        for (Int_t k = 0; k < HADES_constants::kPT1; k++) {
 						DTEvent -> AddTrigger ();
 						DTEvent -> GetTrigger (k) -> SetIsFired (evtInfo -> isGoodEvent (triggerMap [k]));
 				}
-        for (Int_t k = nSimpleTriggers; k < kNtriggers; k++){
+        for (Int_t k = HADES_constants::kPT1; k < HADES_constants::kNtriggers; k++){
 						DTEvent -> AddTrigger ();
-						if (header->isTBit(k+11)) DTEvent -> GetTrigger (k) -> SetIsFired(kTRUE);
+						if (header -> isTBit (k + 11 - HADES_constants::kPT1)) DTEvent -> GetTrigger (k) -> SetIsFired(kTRUE);
         }
 				
         //get Run number
@@ -160,53 +158,54 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
         //get primary vertex
         HVertex vertexReco = header->getVertexReco();
 				DTEvent -> SetVertexPosition(vertexReco.getX(), vertexReco.getY(), vertexReco.getZ(), EnumVertexType::kReconstructedVertex);
-				DTEvent -> SetVertexQuality(vertexReco.getChi2(), EnumVertexType::kReconstructedVertex);
+				DTEvent -> SetVertexQuality (vertexReco.getChi2(), EnumVertexType::kReconstructedVertex);
 
-       //Track Primary and Hits
-//        nRpcClust = evtInfo->getSumRpcMult();
-//        nRpcClustCut = evtInfo->getSumRpcMultCut();
-//        nRpcHits = evtInfo->getSumRpcMultHit();
-//        nTofHits = evtInfo->getSumTofMult();
-//        nRpcHitsCut = evtInfo->getSumRpcMultHitCut();
-//        nTofHitsCut = evtInfo->getSumTofMultCut();
-//        primaryTracks=evtInfo->getSumPrimaryParticleCandMult();
-//        selectedTracks=evtInfo->getSumSelectedParticleCandMult();
+				//Track Primary and Hits
+				DTEvent -> SetVertexPosition (evtInfo -> getSumRpcMult() + evtInfo -> getSumTofMult (), 
+																		 evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut (), 
+																		 evtInfo -> getSumPrimaryParticleCandMult(), 
+																		 EnumVertexType::kDBVertex);
+				DTEvent -> SetVertexQuality (evtInfo -> getSumSelectedParticleCandMult(), 
+				EnumVertexType::kDBVertex);
 
         // loop over FW hits
-        Short_t ring;
-        Float_t psi;
-        Float_t wallHitBeta, wallHitX, wallHitY, wallHitZ, wallHitPhi, wallHitTheta;
-				ushort wallModuleIndex, ring, nWallHitsTot = wallCat->getEntries();
+        Float_t wallHitBeta, wallHitX, wallHitY, wallHitZ;
+				ushort wallModuleIndex, ring, nWallHitsTot;
 				float wallHitTime, wallHitDistance, wallChargeTot = 0.;
 				short wallHitCharge, isWallHitOk;
 				HWallHit* wallHit = 0;
 				
-				wallHit = HCategoryManager::getObject(wallHit,wallCat,0);
-				wallHit -> getXYZLab(&wallHitX, &wallHitY, &wallHitZ);
-				DTEvent -> SetPsdPosition (0., 0., wallHitZ);
+				nWallHitsTot = wallCat -> getEntries();
+				if (nWallHitsTot > 0) {				
+					wallHit = HCategoryManager::getObject(wallHit,wallCat,0);
+					wallHit -> getXYZLab(wallHitX, wallHitY, wallHitZ);
+					DTEvent -> SetPsdPosition (0., 0., wallHitZ);
+				}
         for(Short_t j=0; j<nWallHitsTot; j++) {
 						isWallHitOk = -1;
             wallHit = HCategoryManager::getObject(wallHit,wallCat,j);
             wallModuleIndex = wallHit->getCell();
-            wallHit -> getXYZLab(&wallHitX, &wallHitY, &wallHitZ);
+            wallHit -> getXYZLab(wallHitX, wallHitY, wallHitZ);
             wallHitTime = wallHit->getTime();
             wallHitCharge = wallHit->getCharge();
             wallHitDistance = wallHit->getDistance();
-						wallHitPhi = wallHit->getPhi() * D2R;
-						wallHitTheta = wallHit->getTheta() * D2R;
             ring = divider -> GetRing(wallModuleIndex);
-						wallHitX = wallHitDistance * cos (wallHitTheta) * cos (wallHitPhi);
-						wallHitY = wallHitDistance * cos (wallHitTheta) * sin (wallHitPhi);
-						wallHitZ = wallHitDistance * cos (wallHitTheta);
+//						wallHitPhi = wallHit->getPhi() * D2R;
+//						wallHitTheta = wallHit->getTheta() * D2R;
+//            if (ring >= 0) cout << j << "\t" << wallHitX << "\t" << wallHitY << "\t" << wallHitZ << "\t" << wallHit->getPhi() * D2R << endl;
+//						wallHitX = wallHitDistance * sin (wallHitTheta) * cos (wallHitPhi);
+//						wallHitY = wallHitDistance * sin (wallHitTheta) * sin (wallHitPhi);
+//						wallHitZ = wallHitDistance * cos (wallHitTheta);
+//            if (ring >= 0) cout << j << "\t" << wallHitX << "\t" << wallHitY << "\t" << wallHitZ << "\t" << atan2(wallHitY, wallHitX) << "\t(mine)" << endl;
             if (ring==-1) {
-                cerr << "Error in short MHWallDivider::GetRing(short i="<<wallModuleIndex[j]<<"): it returned -1" << endl;
+                cerr << "Error in short MHWallDivider::GetRing(short i=" << wallModuleIndex << "): it returned -1" << endl;
                 return 2;
             }
 						//cuts by B.Kardan
             wallHitBeta = wallHitDistance / wallHitTime / 299.792458;
-            if ( (ring <= 4            		 && wallHitCharge > 80 && hit_beta > 0.84 && hit_beta < 1.) ||
-                 ((ring == 5 || ring == 6) && wallHitCharge > 85 && hit_beta > 0.85 && hit_beta < 1.) ||
-                 (ring > 6                 && wallHitCharge > 86 && hit_beta > 0.80 && hit_beta < 1.) ) {
+            if ( (ring <= 4            		 && wallHitCharge > 80 && wallHitBeta > 0.84 && wallHitBeta < 1.) ||
+                 ((ring == 5 || ring == 6) && wallHitCharge > 85 && wallHitBeta > 0.85 && wallHitBeta < 1.) ||
+                 (ring > 6                 && wallHitCharge > 86 && wallHitBeta > 0.80 && wallHitBeta < 1.) ) {
 
                 isWallHitOk = 1;
                 wallChargeTot += wallHitCharge;
@@ -217,14 +216,14 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
 						DTEvent -> GetPSDModule(j) -> SetPosition(wallHitX, wallHitY, wallHitBeta);
 						DTEvent -> GetPSDModule(j) -> SetEnergy(wallHitCharge);
         }//loop over wall hits
-				DTEvent -> SetPSDEnergy(wallChargeTot);
+				DTEvent -> SetPsdEnergy(wallChargeTot);
 
         // loop over particle candidates in event
         if(!candCat) continue;
         Int_t size = candCat->getEntries();
         HParticleCand* cand=0;
-        Int_t itr, charge;
-				DTTrack *track;
+        Int_t itr, pid;
+				DataTreeTrack *track;
 				DataTreeTOFHit *hit;
 				TLorentzVector trackPar;
 				float p, theta, pt, eta, phi, mass;
@@ -251,12 +250,14 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
 							p = cand -> getMomentum();
 						}
 						
+//						cout << pid << "\t" << cand->getMomentum() << "\t" << cand->getMomentumOrg() << "\t" << p << endl;
+						
             theta = cand -> getTheta() * D2R;
             phi = cand->getPhi()*D2R;
             pt = p * TMath::Sin( theta );
-            eta = -TMath::Log(TMath::Tan(theta/2.));
+            eta = -TMath::Log(TMath::Tan(theta / 2.));
 						
-						trackPar.SetPtEtaPhiM (pt, eta, phi, mass);
+						trackPar.SetPtEtaPhiM (0.001 * pt, eta, phi, 0.001 * mass); // MeV -> GeV
 						DTEvent -> AddVertexTrack();
 						track = DTEvent -> GetLastVertexTrack ();
 						track -> SetMomentum (trackPar);
@@ -273,8 +274,8 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
 						DTEvent -> AddTOFHit();
 						hit = DTEvent -> GetLastTOFHit();
 						hit -> AddRecoTrackId (itr);
-						if (cand -> getSystem () == 0) hit -> SetStatus (kRPC);
-						else hit -> SetStatus (kTOF);
+						if (cand -> getSystem () == 0) hit -> SetStatus (HADES_constants::kRPC);
+						else hit -> SetStatus (HADES_constants::kTOF);
 						hit -> SetTime (cand -> getDistanceToMetaHit () / cand -> getBeta () / 299.792458);
 						hit -> SetPathLength(cand -> getDistanceToMetaHit ());
 						hit -> SetPosition (cand -> getRkMetaDx (), cand -> getRkMetaDy (), cand -> getMetaMatchRadius ()); // META match qa - NOT POSITION!!!
@@ -285,8 +286,8 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
             itr++;
         } // end cand loop
 				
-				cout << "sumTOFRPC = " << evtInfo -> getSumRpcMult() << "/tsumTOFRPCCut = " << evtInfo -> getSumRpcMultCut() << "/tnTOFHits = " << DTEvent -> GetNTOFHits () << endl; 
-				cout << "nTracks = " << evtInfo -> getSumPrimaryParticleCandMult() << "/tnTracksSel = " << evtInfo -> getSumSelectedParticleCandMult () << "/tnTOFHits = " << DTEvent -> GetNVertexTracks () << endl;
+//				cout << "sumTOFRPC = " << evtInfo -> getSumRpcMult() << "\tsumTOFRPCCut = " << evtInfo -> getSumRpcMultCut() << "\tnTOFHits = " << DTEvent -> GetNTOFHits () << endl; 
+//				cout << "nTracks = " << evtInfo -> getSumPrimaryParticleCandMult() << "\tnTracksSel = " << evtInfo -> getSumSelectedParticleCandMult () << "\tNVertexTracks = " << DTEvent -> GetNVertexTracks () << endl;
 				
         tree->Fill();
 
@@ -294,7 +295,6 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
 		
 		
     tree->Write();
-    //out->Save();
     out->Close();
 
     delete gHades;
@@ -303,7 +303,7 @@ Int_t makeTree(TString infileList, TString outfile, Int_t nEvents=-1)
 
 int main(int argc, char **argv)
 {
-    TROOT Analysis("Analysis","compiled analysis macro");
+    //TROOT Analysis("Analysis","compiled analysis macro");
 
     // argc is the number of arguments in char* array argv
     // CAUTION: argv[0] contains the progname
@@ -314,7 +314,7 @@ int main(int argc, char **argv)
     switch (argc) {
     case 4:       // just inputfile name + nArgs
         nevts  = argv[3];
-        return makeTree(TString(argv[1]),TString(argv[2]), nevts.Atoi());
+        return HTree_to_DT (TString(argv[1]),TString(argv[2]), nevts.Atoi());
         break;
     default:
         cerr<<"ERROR: loopDST() : WRONG NUMBER OF ARGUMENTS! TString infile="",TString outfile="", nevents=-1"<<endl;
