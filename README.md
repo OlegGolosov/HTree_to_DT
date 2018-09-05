@@ -1,26 +1,29 @@
-## Scripts and macros to make and analyze trees for HADES experiment
-1. Directory «treeMaker»
-  * Directory «lists» contains lists of trees in Hades format (HTree)
-  
-  * Directory «scripts»:
-  
-    env.sh runs the install of root and HYDRA environment
-    
-    make.sh runs «make» for the source code makeTree.cc
-    
-    submitJobs.sh runs jobs which convert trees.
-    
-    jobScript.sh is used to display what happens when we run submitJobs.sh
-    
-  * Directory «src»:
-  
-    makeTree.cc is used to convert trees 
-    
-    MHConstants.h contains different constants and enumerators
-    
-    mhqvector.h - class for Qn vectors
-    
-    mhwalldivider.h - divides FW in rings
-    
-2. Directory «macros» contains scripts for a drawing distribution of different variables 
-3. Directory «results» contains figures that were obtained with the scripts from the directory «macros» 
+## Converter from HTree to DataTree format
+
+Installation:
+
+1. set HADES ROOT environment:
+	source /cvmfs/hades.gsi.de/install/6.12.06/hydra2-4.9w/defall.sh
+
+2. Install DataTree package from https://gitlab.cern.ch/na61-hic/DataTreeQA according to README.md provided with its code
+
+3. Install HTree_to_DT:
+	cd HTree_to_DT
+	mkdir build
+	cd build
+	export DATATREE_HOME=/path/to/data/tree/installation
+	cmake ..
+	make
+
+4. Launch the executable:
+	build/HTree_to_DT [input_file_1,input_file_2,...] [output_file] [number_of_events]
+	Filelists can be found in the "fileLists" folder
+	Do not use the last argument if you want to process all the events.
+
+5. Launch on batch farm:
+	./batch/run.sh [path/to/file_list] [number_of_runs]
+	Do not use the last argument if you want to process all runs in the list.
+	This will launch the convertation in the array of jobs. 
+	Output files and logs are stored in the "output" folder.
+	
+	
