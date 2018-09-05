@@ -4,7 +4,6 @@ current_dir=$(pwd)
 n_events=-1
 
 partition=main
-partition=debug
 [ "$partition" == "debug" ] && time=0:20:00
 [ "$partition" == "main" ] && time=8:00:00
 
@@ -13,32 +12,20 @@ file_list=${1}
 configuration=$(basename "$file_list")
 output_dir=${current_dir}/../output/${configuration}/${current_time}
 log_dir=${output_dir}/log
+lists_dir=${output_dir}/lists
 
 hadesroot=/cvmfs/hades.gsi.de/install/6.12.06/hydra2-4.9w/defall.sh 
 
-if [ ! -d $output_dir ]
-then
-   echo "===> CREATE OUTPUTDIR : $output_dir"
-   mkdir -p $output_dir
-else
-   echo "===> USE OUTPUTDIR : $output_dir"
-fi
+mkdir -p $output_dir
+mkdir -p $lists_dir
+mkdir -p $log_dir
 
-if [ ! -d $log_dir ]
-then
-   echo "===> CREATE LOGDIR : $log_dir"
-   mkdir -p $log_dir
-else
-   echo "===> USE LOGDIR : $log_dir"
-fi
-
-csplit -s -f "$output_dir/" -b %1d.list $file_list /01./ {*}
-rm $output_dir/0.list
+csplit -s -f "$lists_dir/" -b %1d.list $file_list /01./ {*}
+rm $lists_dir/0.list
 
 if [ "$#" -ne "2" ]
 then
-    echo "All runs from $filelist will be submitted in "
-    n_runs=$(ls $output_dir/*.list | wc -l)
+    n_runs=$(ls $lists_dir/*.list | wc -l)
 else 
     n_runs=${2}
 fi
@@ -51,8 +38,9 @@ executable=${current_dir}/../build/HTree_to_DT
 echo configuration=$configuration
 echo executable=$executable
 echo output_dir=$output_dir
+echo lists_dir=$lists_dir
 echo log_dir=$log_dir
 echo n_runs=$n_runs
 echo job_range=$job_range
 
-sbatch -J HTree_to_DT -p $partition -t $time -a $job_range -e ${log_dir}/%A_%a.e -o ${log_dir}/%A_%a.o --export=executable=$executable,output_dir=$output_dir,hadesroot=$hadesroot,n_events=$n_events batch_run.sh
+sbatch -J HTree_to_DT -p $partition -t $time -a $job_range -e ${log_dir}/%A_%a.e -o ${log_dir}/%A_%a.o --export=executable=$executable,output_dir=$output_dir,lists_dir=$lists_dir,hadesroot=$hadesroot,n_events=$n_events batch_run.sh

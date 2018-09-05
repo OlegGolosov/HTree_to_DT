@@ -6,7 +6,7 @@ date $format
 
 job_num=$(($SLURM_ARRAY_TASK_ID))
 output_file=$output_dir/$job_num.root
-filelist=$output_dir/$job_num.list
+filelist=$lists_dir/$job_num.list
 #sed -ie 'H;${x;s/\n/,/g;s/^,//;p;};d' $filelist
 
 while read line; do    
@@ -17,7 +17,7 @@ echo "loading " $hadesroot
 source $hadesroot
 echo "executing $executable  $input_files $output_file $n_events"
 $executable  $input_files $output_file $n_events 
-rm $filelist
+#rm $filelist
 
 echo JOB FINISHED!
 date $format
