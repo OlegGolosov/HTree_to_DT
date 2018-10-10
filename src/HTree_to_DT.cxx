@@ -74,7 +74,7 @@ Float_t GetCentralityClass (Int_t mh) //Kardan centrality classes
 	return -1.0;
 }
 
-Int_t HTree_to_DT (TString infileList, TString outfile = "output.root", Int_t nEvents=-1)
+Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/root/be1210816080601.hld_dst_apr12.root", TString outfile = "output.root", Int_t nEvents=-1)
 {
     Bool_t isSimulation = kFALSE;
 
@@ -135,7 +135,7 @@ Int_t HTree_to_DT (TString infileList, TString outfile = "output.root", Int_t nE
 				DTEvent -> ClearEvent();
         Int_t nbytes =  loop.nextEvent(i);             // get next event. categories will be cleared before
         if(nbytes <= 0) { cout<<nbytes<<endl; break; } // last event reached
-        if(i%5000 == 0) cout<<"event "<<i<<endl;
+        if(i%5000 == 0) cout<<"\revent "<<i;
 
 //        loop.getSectors(sectors); // fill sector array
 
@@ -294,7 +294,7 @@ Int_t HTree_to_DT (TString infileList, TString outfile = "output.root", Int_t nE
 						DTEvent -> AddTOFHit();
 						hit = DTEvent -> GetLastTOFHit();
 						hit -> AddRecoTrackId (itr);
-						if (cand -> getSystem () == 0) hit -> SetStatus (HADES_constants::kRPC);
+						if (cand -> getSystem () == 0) hit TString(argv[1])-> SetStatus (HADES_constants::kRPC);
 						else hit -> SetStatus (HADES_constants::kTOF);
 						hit -> SetTime (cand -> getDistanceToMetaHit () / cand -> getBeta () / 299.792458);
 						hit -> SetPathLength(cand -> getDistanceToMetaHit ());
@@ -313,7 +313,7 @@ Int_t HTree_to_DT (TString infileList, TString outfile = "output.root", Int_t nE
 
     } // end eventloop
 		
-		
+		cout << endl;
     tree->Write();
     out->Close();
 
@@ -332,6 +332,12 @@ int main(int argc, char **argv)
         break;
 		case 3:
         return HTree_to_DT (TString(argv[1]),TString(argv[2]));
+        break;
+		case 2:
+        return HTree_to_DT (TString(argv[1]));
+        break;
+		case 1:
+        return HTree_to_DT ();
         break;
     default:
         cerr<<"ERROR: loopDST() : WRONG NUMBER OF ARGUMENTS! TString infile,TString outfile, nevents=-1"<<endl;
