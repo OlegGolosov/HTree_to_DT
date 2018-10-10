@@ -6,9 +6,13 @@ Installation:
 ```
 	$ source /cvmfs/hades.gsi.de/install/6.12.06/hydra2-4.9w/defall.sh
 ```
-2. Install DataTree package from https://gitlab.cern.ch/na61-hic/DataTree (hades branch) according to README.md provided with its code
+2. make alias to use a newer cmake version:
+```
+	$ alias cmake="/cvmfs/it.gsi.de/cmake/3.9.6/bin/cmake"
+```
+3. Install DataTree package from https://gitlab.cern.ch/na61-hic/DataTree (hades branch) according to README.md provided with its code
 
-3. Install HTree_to_DT:
+4. Install HTree_to_DT:
 
 ```
 	$ cd HTree_to_DT
