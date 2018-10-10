@@ -60,7 +60,8 @@ const Float_t D2R = TMath::DegToRad(); //deg to rad
 //  outfile    : output file
 //  nEvents    : number of events to processed. if  nEvents < entries or < 0 the chain will be processed
 
-Float_t GetCentralityClass (Int_t mh) { //Kardan centrality classes
+Float_t GetCentralityClass (Int_t mh) //Kardan centrality classes
+{
   static const Int_t nCentClasses = 10;
   const Float_t centMax = 50.0;
   Float_t centClassLimits [nCentClasses + 1] = {0, 39, 60, 74, 88, 104, 121, 140, 160, 182, 280};
@@ -174,11 +175,11 @@ Int_t HTree_to_DT (TString infileList, TString outfile = "output.root", Int_t nE
 				DTEvent -> SetVertexQuality (vertexReco.getChi2(), EnumVertexType::kReconstructedVertex);
 
 				//centrality
-        DTEvent -> SetCentrality (GetCentralityClass (kNhitsTOF_RPC_cut, evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut ()));
-        DTEvent -> SetCentralityEstimator (kNhitsTOF_RPC, evtInfo -> getSumRpcMult() + evtInfo -> getSumTofMult ());
-        DTEvent -> SetCentralityEstimator (kNhitsTOF_RPC_cut, evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut ());
-        DTEvent -> SetCentralityEstimator (kNtracks, evtInfo -> getSumPrimaryParticleCandMult());
-        DTEvent -> SetCentralityEstimator (kNselectedTracks, evtInfo -> getSumSelectedParticleCandMult());
+        DTEvent -> SetCentrality (GetCentralityClass (evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut ()));
+        DTEvent -> SetCentralityEstimator (HADES_constants::kNhitsTOF_RPC, evtInfo -> getSumRpcMult() + evtInfo -> getSumTofMult ());
+        DTEvent -> SetCentralityEstimator (HADES_constants::kNhitsTOF_RPC_cut, evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut ());
+        DTEvent -> SetCentralityEstimator (HADES_constants::kNtracks, evtInfo -> getSumPrimaryParticleCandMult());
+        DTEvent -> SetCentralityEstimator (HADES_constants::kNselectedTracks, evtInfo -> getSumSelectedParticleCandMult());
 //				DTEvent -> SetVertexPosition (evtInfo -> getSumRpcMult() + evtInfo -> getSumTofMult (), 
 //																		 evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut (), 
 //																		 evtInfo -> getSumPrimaryParticleCandMult(), 
