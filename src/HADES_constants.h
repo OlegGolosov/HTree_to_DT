@@ -38,6 +38,14 @@ namespace HADES_constants
 		kTOF, 
 		kNTOFdetectors
 	};
+  
+	enum eCentralityEstimators {
+		kNhitsTOF_RPC = 0,
+		kNhitsTOF_RPC_cut,
+		kNtracks, 
+		kNselectedTracks, 
+		kNCentralityEstimators
+	};
 }
 
 #endif
