@@ -21,7 +21,6 @@ namespace HADES_constants
 		kPT1,
 		kPT2,
 		kPT3,
-		kPT4,
 		kNtriggers
 	};
 
@@ -44,8 +43,12 @@ namespace HADES_constants
 		kNhitsTOF_cut,
 		kNhitsRPC,
 		kNhitsRPC_cut,
+		kNhitsTOF_RPC,
+		kNhitsTOF_RPC_cut,
 		kNtracks, 
-		kNselectedTracks, 
+		kNselectedTracks,
+		kFWSumChargeSpec,
+		kFWSumChargeZ,
 		kNCentralityEstimators
 	};
 }

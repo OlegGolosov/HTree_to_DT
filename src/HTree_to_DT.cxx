@@ -26,30 +26,50 @@
 #include "TLorentzVector.h"
 
 #include <iostream>
+#include <map>
 
 #include "DataTreeEvent.h"
 #include "mhwalldivider.h"
 #include "HADES_constants.h"
+#include "hparticleevtcharaBK.h"
 
 
 using namespace std;
 
-const int triggerMap [HADES_constants::kNtriggers] = {
-  Particle::kGoodVertexClust,
-  Particle::kGoodVertexCand,
-  Particle::kGoodSTART,
-  Particle::kNoPileUpSTART,
-  Particle::kNoPileUpMETA,
-  Particle::kNoPileUpMDC,
-  Particle::kNoFlashMDC,
-  Particle::kGoodMDCMult,
-  Particle::kGoodMDCMIPSMult,
-  Particle::kGoodLepMult,
-  Particle::kGoodTRIGGER,
-  Particle::kGoodSTART2,
-  Particle::kNoVETO,
-  Particle::kGoodSTARTVETO,
-  Particle::kGoodSTARTMETA
+const map <int, int> triggerMap = 
+{
+  {HADES_constants::kGoodVertexClust, Particle::kGoodVertexClust},
+  {HADES_constants::kGoodVertexCand, Particle::kGoodVertexCand},
+  {HADES_constants::kGoodSTART, Particle::kGoodSTART},
+  {HADES_constants::kNoPileUpSTART, Particle::kNoPileUpSTART},
+  {HADES_constants::kNoPileUpMETA, Particle::kNoPileUpMETA},
+  {HADES_constants::kNoPileUpMDC, Particle::kNoPileUpMDC},
+  {HADES_constants::kNoFlashMDC, Particle::kNoFlashMDC},
+  {HADES_constants::kGoodMDCMult, Particle::kGoodMDCMult},
+  {HADES_constants::kGoodMDCMIPSMult, Particle::kGoodMDCMIPSMult},
+  {HADES_constants::kGoodLepMult, Particle::kGoodLepMult},
+  {HADES_constants::kGoodTRIGGER, Particle::kGoodTRIGGER},
+  {HADES_constants::kGoodSTART2, Particle::kGoodSTART2},
+  {HADES_constants::kNoVETO, Particle::kNoVETO},
+  {HADES_constants::kGoodSTARTVETO, Particle::kGoodSTARTVETO},
+  {HADES_constants::kGoodSTARTMETA, Particle::kGoodSTARTMETA},
+  {HADES_constants::kPT1, 11},
+  {HADES_constants::kPT2, 12},
+  {HADES_constants::kPT3, 13}
+};
+
+const map <int, int> centralityEstimatorMap = 
+{
+	{HADES_constants::kNhitsTOF, HParticleEvtCharaBK::kTOFtot},
+	{HADES_constants::kNhitsTOF_cut, HParticleEvtCharaBK::kTOF},
+	{HADES_constants::kNhitsRPC, HParticleEvtCharaBK::kRPCtot},
+	{HADES_constants::kNhitsRPC_cut, HParticleEvtCharaBK::kRPC},
+	{HADES_constants::kNhitsTOF_RPC, HParticleEvtCharaBK::kTOFRPCtot},
+	{HADES_constants::kNhitsTOF_RPC_cut, HParticleEvtCharaBK::kTOFRPC},
+	{HADES_constants::kNtracks, HParticleEvtCharaBK::kPrimaryParticleCand},
+	{HADES_constants::kNselectedTracks, HParticleEvtCharaBK::kSelectedParticleCand},
+	{HADES_constants::kFWSumChargeSpec, HParticleEvtCharaBK::kFWSumChargeSpec},
+	{HADES_constants::kFWSumChargeZ, HParticleEvtCharaBK::kFWSumChargeZ}
 };
 
 const Float_t D2R = TMath::DegToRad(); //deg to rad
@@ -59,21 +79,11 @@ const Float_t D2R = TMath::DegToRad(); //deg to rad
 //  outfile    : output file
 //  nEvents    : number of events to processed. if  nEvents < entries or < 0 the chain will be processed
 
-Float_t GetCentralityClass (Int_t mh) //Kardan centrality classes
-{
-  static const Int_t nCentClasses = 10;
-  const Float_t centMax = 50.0;
-  Float_t centClassLimits [nCentClasses + 1] = {0, 39, 60, 74, 88, 104, 121, 140, 160, 182, 280};
 
-  Float_t centClassWidth = centMax / (Float_t) nCentClasses;
-
-  for (Int_t i = 0; i < nCentClasses; i++) {
-    if (mh > centClassLimits [i] && mh <= centClassLimits [i + 1]) return centClassWidth * (nCentClasses - i - 0.5);
-  }
-  return -1.0;
-}
-
-Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/root/be1210816080601.hld_dst_apr12.root", TString outfile = "output.root", Int_t nEvents=-1)
+Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen8/108/root/be1210816080601.hld_dst_apr12.root", 
+									 TString outfile = "output.root", 
+									 Int_t nEvents = -1, 
+									 TString parameterFile = "../evtchara07/centrality_epcorr_apr12_gen8_2019_02_pass30.root")
 {
   Bool_t isSimulation = kFALSE;
 
@@ -101,6 +111,12 @@ Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/ro
     cerr<<"READBACK: ERROR : cannot read input !"<<endl;
     exit(1);
   }
+
+  // configure event characterization class
+  HParticleEvtCharaBK evtChara;
+  evtChara.setParameterFile (parameterFile);
+  evtChara.init();
+
   // read all categories
   loop.printCategories();
   loop.printChain();
@@ -137,7 +153,8 @@ Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/ro
       cout<<nbytes<<endl;  // last event reached
       break;
     }
-    if(i%5000 == 0) cout<<"\revent "<<i;
+    //if(i%5000 == 0) cout<<"\revent "<<i;
+    if(i%5000 == 0) cout << "event " << i << endl;
 
 //        loop.getSectors(sectors); // fill sector array
 
@@ -159,11 +176,11 @@ Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/ro
     HEventHeader *header = gHades->getCurrentEvent()->getHeader();
     for (Int_t k = 0; k < HADES_constants::kPT1; k++) {
       DTEvent -> AddTrigger ();
-      DTEvent -> GetTrigger (k) -> SetIsFired (evtInfo -> isGoodEvent (triggerMap [k]));
+      DTEvent -> GetTrigger (k) -> SetIsFired (evtInfo -> isGoodEvent (triggerMap.at(k)));
     }
     for (Int_t k = HADES_constants::kPT1; k < HADES_constants::kNtriggers; k++) {
       DTEvent -> AddTrigger ();
-      if (header -> isTBit (k + 11 - HADES_constants::kPT1)) DTEvent -> GetTrigger (k) -> SetIsFired(kTRUE);
+      if (header -> isTBit (triggerMap.at(k))) DTEvent -> GetTrigger (k) -> SetIsFired(kTRUE);
     }
 
     //get Run number
@@ -177,26 +194,20 @@ Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/ro
     DTEvent -> SetVertexQuality (vertexReco.getChi2(), EnumVertexType::kReconstructedVertex);
 
     //centrality
-    DTEvent -> SetCentrality (GetCentralityClass (evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut ()));
-    DTEvent -> SetCentralityEstimator (HADES_constants::kNhitsTOF, evtInfo -> getSumTofMult ());
-    DTEvent -> SetCentralityEstimator (HADES_constants::kNhitsRPC, evtInfo -> getSumTofMult ());
-    DTEvent -> SetCentralityEstimator (HADES_constants::kNhitsTOF_cut, evtInfo -> getSumTofMultCut ());
-    DTEvent -> SetCentralityEstimator (HADES_constants::kNhitsRPC_cut, evtInfo -> getSumRpcMultCut());
-    DTEvent -> SetCentralityEstimator (HADES_constants::kNtracks, evtInfo -> getSumPrimaryParticleCandMult());
-    DTEvent -> SetCentralityEstimator (HADES_constants::kNselectedTracks, evtInfo -> getSumSelectedParticleCandMult());
-//				DTEvent -> SetVertexPosition (evtInfo -> getSumRpcMult() + evtInfo -> getSumTofMult (),
-//																		 evtInfo -> getSumRpcMultCut() + evtInfo -> getSumTofMultCut (),
-//																		 evtInfo -> getSumPrimaryParticleCandMult(),
-//																		 EnumVertexType::kDBVertex);
-//				DTEvent -> SetVertexQuality (evtInfo -> getSumSelectedParticleCandMult(),
-//				EnumVertexType::kDBVertex);
+    for (auto estimator : centralityEstimatorMap)
+    {
+	DTEvent -> SetCentralityEstimator (estimator.first, evtChara.getCentralityEstimator (estimator.second));
+	DTEvent -> SetCentrality (estimator.first, evtChara.getCentralityPercentile (estimator.second));
+	DTEvent -> SetCentralityClass (estimator.first, evtChara.getCentralityClass (estimator.second, HParticleEvtCharaBK::k5));
+    }
 
     // loop over FW hits
     Float_t wallHitBeta, wallHitX, wallHitY, wallHitZ;
     ushort wallModuleIndex, ring, nWallHitsTot;
-    float wallHitTime, wallHitDistance, wallChargeTot = 0.;
-    short wallHitCharge, isWallHitOk;
-    HWallHit* wallHit = 0;
+    float wallHitCharge, wallHitChargeSpec, wallHitTime, wallHitDistance, wallChargeTot = 0.;
+    short wallHitChargeZ;
+    bool isWallHitOk;
+    HWallHitSim* wallHit = 0;
 
     nWallHitsTot = wallCat -> getEntries();
     if (nWallHitsTot > 0) {
@@ -205,39 +216,38 @@ Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/ro
       DTEvent -> SetPsdPosition (0., 0., wallHitZ);
     }
     for(Short_t j=0; j<nWallHitsTot; j++) { //loop over wall hits
-      isWallHitOk = -1;
       wallHit = HCategoryManager::getObject(wallHit,wallCat,j);
       wallModuleIndex = wallHit->getCell();
       wallHit -> getXYZLab(wallHitX, wallHitY, wallHitZ);
       wallHitTime = wallHit->getTime();
-      wallHitCharge = wallHit->getCharge();
       wallHitDistance = wallHit->getDistance();
+      wallHitBeta = wallHitDistance / wallHitTime / 299.792458;
+      wallHitCharge = wallHit->getCharge();
+      wallHitChargeSpec = 93. * pow (wallHitCharge, 0.46 - 0.006 * sqrt (wallHitCharge));  // parametrization from R.Holzmann
+      wallHitChargeZ = evtChara.getFWCharge(wallHit);
+      
       ring = divider -> GetRing(wallModuleIndex);
-//						wallHitPhi = wallHit->getPhi() * D2R;
-//						wallHitTheta = wallHit->getTheta() * D2R;
-//            if (ring >= 0) cout << j << "\t" << wallHitX << "\t" << wallHitY << "\t" << wallHitZ << "\t" << wallHit->getPhi() * D2R << endl;
-//						wallHitX = wallHitDistance * sin (wallHitTheta) * cos (wallHitPhi);
-//						wallHitY = wallHitDistance * sin (wallHitTheta) * sin (wallHitPhi);
-//						wallHitZ = wallHitDistance * cos (wallHitTheta);
-//            if (ring >= 0) cout << j << "\t" << wallHitX << "\t" << wallHitY << "\t" << wallHitZ << "\t" << atan2(wallHitY, wallHitX) << "\t(mine)" << endl;
       if (ring==0) {
-        cerr << "Error in short MHWallDivider::GetRing(short i=" << wallModuleIndex << "): it returned -1" << endl;
+        cerr << "Error in short MHWallDivider::GetRing(short i=" << wallModuleIndex << "): it returned 0" << endl;
         return 2;
       }
-      //cuts by B.Kardan
-      wallHitBeta = wallHitDistance / wallHitTime / 299.792458;
-      if ( (ring <= 5            		 && wallHitCharge > 80 && wallHitBeta > 0.84 && wallHitBeta < 1.2) ||
-           ((ring == 6 || ring == 7) && wallHitCharge > 84 && wallHitBeta > 0.85 && wallHitBeta < 1.2) ||
-           (ring > 7                 && wallHitCharge > 88 && wallHitBeta > 0.80 && wallHitBeta < 1.2) ) {
-
-        isWallHitOk = 1;
-        wallChargeTot += wallHitCharge;
-      }//B.Kardan cuts for wall hits
+      
+      if (evtChara.PassesCutsFW(wallHit))
+      {
+        isWallHitOk = true;
+        wallChargeTot += wallHitChargeZ;
+      }
+      else isWallHitOk = false;
 
       DTEvent -> AddPSDModule(1);
-      DTEvent -> GetPSDModule(j) -> SetId (ring * isWallHitOk);
-      DTEvent -> GetPSDModule(j) -> SetPosition(wallHitX, wallHitY, wallHitBeta);
-      DTEvent -> GetPSDModule(j) -> SetEnergy(wallHitCharge);
+      DTEvent -> GetPSDModule(j) -> SetId (wallModuleIndex);
+      DTEvent -> GetPSDModule(j) -> SetRing (ring);
+      DTEvent -> GetPSDModule(j) -> SetHasPassedCuts (isWallHitOk);
+      DTEvent -> GetPSDModule(j) -> SetPosition (wallHitX, wallHitY, wallHitZ);
+      DTEvent -> GetPSDModule(j) -> SetBeta (wallHitBeta);
+      DTEvent -> GetPSDModule(j) -> SetEnergy (wallHitCharge);
+      DTEvent -> GetPSDModule(j) -> SetChargeSpec (wallHitChargeSpec);
+      DTEvent -> GetPSDModule(j) -> SetChargeZ (wallHitChargeZ);
     }
     DTEvent -> SetPsdEnergy(wallChargeTot);
 
@@ -302,11 +312,11 @@ Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/ro
       if (cand -> getSystem () == 0) hit -> SetStatus (HADES_constants::kRPC);
       else hit -> SetStatus (HADES_constants::kTOF);
       hit -> SetTime (cand -> getDistanceToMetaHit () / cand -> getBeta () / 299.792458);
-      hit -> SetPathLength(cand -> getDistanceToMetaHit ());
+      hit -> SetPathLength (cand -> getDistanceToMetaHit ());
       hit -> SetPosition (cand -> getRkMetaDx (), cand -> getRkMetaDy (), cand -> getMetaMatchRadius ()); // META match qa - NOT POSITION!!!
-      hit -> SetCharge(cand -> getCharge ());
-      hit -> SetSquaredMass(cand -> getMass2 ());
-      hit -> SetSquaredMassError(cand -> getMetaMatchQuality ());
+      hit -> SetCharge (cand -> getCharge ());
+      hit -> SetSquaredMass (cand -> getMass2 ());
+      hit -> SetSquaredMassError (cand -> getMetaMatchQuality ());
 
       itr++;
     } // end cand loop
@@ -328,11 +338,15 @@ Int_t HTree_to_DT (TString infileList = "/lustre/nyx/hades/dst/apr12/gen9/108/ro
 
 int main(int argc, char **argv)
 {
-  TString nevts ;
+  TString nevts;
   TString filenumber;
   switch (argc) {
+  case 5:
+    nevts = argv[3];
+    return HTree_to_DT (TString(argv[1]),TString(argv[2]), nevts.Atoi(), TString(argv[4]));
+    break;
   case 4:
-    nevts  = argv[3];
+    nevts = argv[3];
     return HTree_to_DT (TString(argv[1]),TString(argv[2]), nevts.Atoi());
     break;
   case 3:
@@ -345,7 +359,7 @@ int main(int argc, char **argv)
     return HTree_to_DT ();
     break;
   default:
-    cerr<<"ERROR: loopDST() : WRONG NUMBER OF ARGUMENTS! TString infile,TString outfile, nevents=-1"<<endl;
+    cerr << "ERROR: loopDST() : WRONG NUMBER OF ARGUMENTS! TString infile, TString outfile, nevents=-1, TString parameterFile" << endl;
     return 1; // fail
   }
 }

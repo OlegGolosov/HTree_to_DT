@@ -6,6 +6,7 @@ set(CMAKE_BUILD_TYPE debug)
 
 list(APPEND CMAKE_PREFIX_PATH $ENV{ROOTSYS})
 list(APPEND CMAKE_PREFIX_PATH $ENV{DATATREE_HOME})
+list(APPEND CMAKE_PREFIX_PATH ${DATATREE_HOME})
 
 find_package(ROOT REQUIRED COMPONENTS RIO Tree)
 find_package(DataTree REQUIRED)
@@ -17,6 +18,8 @@ include(${ROOT_USE_FILE})
 include_directories(
     $ENV{HADDIR}/include
     ${CMAKE_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}/src
+    ${CMAKE_SOURCE_DIR}/evtchara07
     ${ROOT_INCLUDE_DIRS}
     ${DataTree_INCLUDE_DIR}
     )
@@ -58,5 +61,23 @@ set (HADES_LIBS
 		)
 add_definitions(${ROOT_CXX_FLAGS})
 
-add_executable(HTree_to_DT src/HADES_constants.h src/mhwalldivider.h src/HTree_to_DT.cxx)
-target_link_libraries(HTree_to_DT ${ROOT_LIBRARIES} ${HADES_LIBS} DataTree)
+set (HEADERS
+		src/HADES_constants.h 
+		src/mhwalldivider.h
+)
+
+set (SOURCES
+		src/HTree_to_DT.cxx
+)
+
+set (DICT_FILE_NAME G__EvtCharaBK)
+ROOT_GENERATE_DICTIONARY(${DICT_FILE_NAME}
+        evtchara07/hparticleevtcharaBK.h
+        LINKDEF evtchara07/EvtCharaLinkDef.h
+        OPTIONS -s libEvtCharaBK -I${HADES_INCLUDE_DIR} -I${CMAKE_CURRENT_SOURCE_DIR}
+        )
+add_library(EvtCharaBK SHARED evtchara07/hparticleevtcharaBK.cc ${DICT_FILE_NAME}.cxx)
+target_link_libraries(EvtCharaBK ${ROOT_LIBRARIES} ${HADES_LIBS})
+
+add_executable(HTree_to_DT ${HEADERS} ${SOURCES})
+target_link_libraries(HTree_to_DT ${ROOT_LIBRARIES} ${HADES_LIBS} DataTree EvtCharaBK)
